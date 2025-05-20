@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    - cron: "0 4 * * *" # At 12PM UTC+8
+    - cron: "0 4 * * *" # 每天 UTC 4:00，即北京时间中午 12 点
   workflow_dispatch:
 
 jobs:
@@ -15,11 +15,9 @@ jobs:
     if: ${{ github.event.repository.fork }}
 
     steps:
-      # Step 1: run a standard checkout action
       - name: Checkout target repo
         uses: actions/checkout@v4
 
-      # Step 2: run the sync action
       - name: Sync upstream changes
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
@@ -28,9 +26,11 @@ jobs:
           upstream_sync_branch: main
           target_sync_branch: main
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          force_sync: true  # ✅ 强制推送，避免 push 被拒绝的问题
 
-      - name: Sync check
+      - name: 同步失败检查
         if: failure()
         run: |
-          echo "[Error] Due to a change in the workflow file of the upstream repository, GitHub has automatically suspended the scheduled automatic update. You need to manually sync your fork."
+          echo "[❌ 同步失败] 无法将同步后的更改推送到你的 fork 仓库。"
+          echo "可能是分支有冲突或推送权限问题。你可以手动同步或检查 Action 日志详情。"
           exit 1
